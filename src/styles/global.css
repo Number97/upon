@@ -8,9 +8,3 @@
 
   --font-sans: "Inter", sans-serif;
 }
-
-body {
-  background:
-    radial-gradient(ellipse 60% 50% at 50% 20%, rgba(0, 35, 102, 0.15) 0%, transparent 70%),
-    #010206;
-}
