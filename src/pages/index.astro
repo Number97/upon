@@ -1,0 +1,92 @@
+---
+import '../styles/global.css'
+
+const socials = [
+  { name: 'Instagram', url: 'https://instagram.com/uponground', icon: 'instagram' },
+  { name: 'YouTube', url: 'https://www.youtube.com/@uponhub/', icon: 'youtube' },
+  { name: 'SoundCloud', url: 'https://soundcloud.com/uponground', icon: 'soundcloud' },
+  { name: 'Bandcamp', url: 'https://uponground.bandcamp.com/', icon: 'bandcamp' },
+  { name: 'Telegram', url: 'https://t.me/uponhub', icon: 'telegram' },
+]
+
+const releases = [
+  { title: 'PAKZ - Channel 2', url: 'https://www.youtube.com/watch?v=pbrWMw7OA0o' },
+  { title: 'Nichel - Romanian Dream [UPG002]', url: 'https://www.youtube.com/watch?v=LBL9Ad7jOu8' },
+  { title: 'Raffers - Dialog [UPG001]', url: 'https://www.youtube.com/watch?v=hRxR9aYpAmY' },
+]
+
+const email = 'upongroundhub@gmail.com'
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Uponground - electronic music platform" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <title>Uponground</title>
+  </head>
+  <body class="bg-dark text-light font-sans min-h-screen flex items-center justify-center antialiased">
+    <main class="w-full max-w-md mx-auto px-6 py-16 flex flex-col items-center gap-10">
+
+      <!-- Logo -->
+      <div class="w-20 h-20">
+        <img src="/logo.svg" alt="Uponground" class="w-full h-full" />
+      </div>
+
+      <!-- Name & Bio -->
+      <div class="text-center space-y-2">
+        <h1 class="text-2xl font-semibold tracking-wide uppercase">Uponground</h1>
+        <p class="text-gray text-sm font-light tracking-widest uppercase">Electronic Music Platform</p>
+      </div>
+
+      <!-- Social Icons -->
+      <nav class="flex items-center gap-5" aria-label="Social links">
+        {socials.map(({ name, url, icon }) => (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={name}
+            class="text-gray hover:text-light transition-colors duration-200"
+          >
+            <svg class="w-5 h-5 fill-current" role="img" aria-hidden="true">
+              <use href={`/icons.svg#${icon}`} />
+            </svg>
+          </a>
+        ))}
+        <a
+          href={`mailto:${email}`}
+          aria-label="Email"
+          class="text-gray hover:text-light transition-colors duration-200"
+        >
+          <svg class="w-5 h-5 fill-current" role="img" aria-hidden="true">
+            <use href="/icons.svg#email" />
+          </svg>
+        </a>
+      </nav>
+
+      <!-- Links -->
+      <div class="w-full flex flex-col gap-3">
+        <p class="text-[11px] text-gray font-medium tracking-widest uppercase text-center mb-1">Releases</p>
+        {releases.map(({ title, url }) => (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="block w-full text-center py-3.5 px-4 border border-gray/20 rounded-lg text-sm font-light tracking-wide text-light/90 hover:bg-blue/15 hover:border-blue/40 transition-all duration-200"
+          >
+            {title}
+          </a>
+        ))}
+      </div>
+
+      <!-- Coming Soon -->
+      <p class="text-[11px] text-gray/60 font-medium tracking-[0.25em] uppercase">More Coming Soon</p>
+
+    </main>
+  </body>
+</html>
