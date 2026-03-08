@@ -105,4 +105,4 @@ netlify.toml      # Netlify build config
 
 ## Editing Content
 
-All links and content are in [src/pages/index.astro](src/pages/index.astro) — edit the `socials` and `releases` arrays at the top of the file.
+All links and content are in [src/pages/index.astro](src/pages/index.astro) — edit the `socials`, `releases`, and `podcasts` arrays at the top of the file.

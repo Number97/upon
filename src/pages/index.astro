@@ -15,6 +15,10 @@ const releases = [
   { title: 'Raffers - Dialog [UPG001]', url: 'https://www.youtube.com/watch?v=hRxR9aYpAmY' },
 ]
 
+const podcasts = [
+  { title: "Geolyna Georgia - Celebrating Women's Day [UPC001]", url: 'https://on.soundcloud.com/j4hArARmAQDToJvn8O' },
+]
+
 const email = 'upongroundhub@gmail.com'
 ---
 
@@ -76,6 +80,24 @@ const email = 'upongroundhub@gmail.com'
       <div class="w-full flex flex-col gap-3">
         <p class="text-xs text-gray font-medium tracking-widest uppercase text-center mb-2">Releases</p>
         {releases.map(({ title, url }) => (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="block w-full text-center py-4 px-5 bg-dark rounded-lg text-sm font-normal tracking-wide text-light hover:bg-dark/80 transition-all duration-200"
+          >
+            {title}
+          </a>
+        ))}
+      </div>
+
+      <!-- Divider -->
+      <div class="w-8 h-px bg-gray/20"></div>
+
+      <!-- Podcasts -->
+      <div class="w-full flex flex-col gap-3">
+        <p class="text-xs text-gray font-medium tracking-widest uppercase text-center mb-2">Podcasts</p>
+        {podcasts.map(({ title, url }) => (
           <a
             href={url}
             target="_blank"
