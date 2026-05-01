@@ -1,0 +1,79 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { sql } from '../../../lib/db';
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect('/admin');
+
+const catRows = await sql`select id, slug, label from categories where id = ${id}` as any[];
+if (!catRows.length) return Astro.redirect('/admin');
+const cat = catRows[0];
+
+const linkRows = await sql`select id, title, url, position from links where category_id = ${id} order by position asc, created_at asc` as any[];
+---
+
+<AdminLayout title={cat.label}>
+  <a href="/admin" class="text-xs text-gray hover:text-light tracking-wider uppercase mb-4 inline-block">← Back</a>
+
+  <h1 class="text-lg font-semibold tracking-wide uppercase mb-6">{cat.label}</h1>
+
+  <h2 class="text-sm font-semibold tracking-widest uppercase text-gray mb-3">Category</h2>
+  <form data-dirty-form data-ajax-form method="POST" action="/api/admin/categories" class="flex flex-col gap-2 bg-dark rounded-lg p-4 mb-8">
+    <input type="hidden" name="action" value="update" />
+    <input type="hidden" name="id" value={cat.id} />
+    <label class="text-[10px] text-gray tracking-widest uppercase">Label</label>
+    <input name="label" value={cat.label} required
+      class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+    <label class="text-[10px] text-gray tracking-widest uppercase mt-2">Slug</label>
+    <input name="slug" value={cat.slug} pattern="[a-z0-9-]+" required
+      class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+    <button type="submit" class="self-start bg-light text-dark text-xs font-semibold tracking-wider uppercase px-4 py-2 rounded hover:bg-light/90 mt-2">Save</button>
+  </form>
+
+  <h2 class="text-sm font-semibold tracking-widest uppercase text-gray mb-3">Links</h2>
+  <ul class="flex flex-col gap-2 mb-6">
+    {linkRows.map((l, i) => (
+      <li class="bg-dark rounded-lg p-3 flex flex-col gap-2">
+        <form data-dirty-form data-ajax-form method="POST" action="/api/admin/links" class="flex flex-col gap-2">
+          <input type="hidden" name="action" value="update" />
+          <input type="hidden" name="id" value={l.id} />
+          <input name="title" value={l.title} required
+            class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+          <input name="url" type="url" value={l.url} required
+            class="bg-blue text-light text-xs px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30 font-mono" />
+          <div class="flex items-center gap-2">
+            <button type="submit" class="bg-light text-dark text-xs font-semibold tracking-wider uppercase px-3 py-1.5 rounded hover:bg-light/90">Save</button>
+            <button type="button" class="text-xs text-gray hover:text-light disabled:opacity-30" disabled={i === 0} data-link-up={l.id}>▲</button>
+            <button type="button" class="text-xs text-gray hover:text-light disabled:opacity-30" disabled={i === linkRows.length - 1} data-link-down={l.id}>▼</button>
+            <button type="button" class="ml-auto text-xs text-red-400 hover:text-red-300" data-link-delete={l.id} data-link-title={l.title}>✕</button>
+          </div>
+        </form>
+      </li>
+    ))}
+  </ul>
+
+  <h2 class="text-sm font-semibold tracking-widest uppercase text-gray mb-3">Add link</h2>
+  <form data-ajax-form method="POST" action="/api/admin/links" class="flex flex-col gap-2 bg-dark rounded-lg p-4">
+    <input type="hidden" name="action" value="create" />
+    <input type="hidden" name="category_id" value={cat.id} />
+    <input name="title" placeholder="Title" required
+      class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+    <input name="url" type="url" placeholder="https://…" required
+      class="bg-blue text-light text-xs px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30 font-mono" />
+    <button type="submit" class="self-start bg-light text-dark text-xs font-semibold tracking-wider uppercase px-4 py-2 rounded hover:bg-light/90">Add</button>
+  </form>
+
+  <script is:inline>
+    document.querySelectorAll('[data-link-up]').forEach((b) => b.addEventListener('click', () =>
+      window.AdminUI.action('/api/admin/links', { action: 'move', id: b.getAttribute('data-link-up'), dir: 'up' })));
+    document.querySelectorAll('[data-link-down]').forEach((b) => b.addEventListener('click', () =>
+      window.AdminUI.action('/api/admin/links', { action: 'move', id: b.getAttribute('data-link-down'), dir: 'down' })));
+    document.querySelectorAll('[data-link-delete]').forEach((b) => b.addEventListener('click', () => {
+      const id = b.getAttribute('data-link-delete');
+      const title = b.getAttribute('data-link-title');
+      if (!confirm(`Delete link "${title}"?`)) return;
+      window.AdminUI.action('/api/admin/links', { action: 'delete', id });
+    }));
+  </script>
+</AdminLayout>

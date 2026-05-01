@@ -1,0 +1,43 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { SESSION_COOKIE, verifySessionCookie } from '../../lib/auth';
+
+if (verifySessionCookie(Astro.cookies.get(SESSION_COOKIE)?.value)) {
+  return Astro.redirect('/admin');
+}
+---
+
+<AdminLayout title="Login" showNav={false}>
+  <div class="max-w-sm mx-auto mt-16 flex flex-col gap-6">
+    <h1 class="text-xl font-semibold tracking-wide uppercase text-center">Admin</h1>
+    <form data-ajax-form method="POST" action="/api/admin/login" class="flex flex-col gap-3">
+      <input
+        type="password"
+        name="password"
+        autocomplete="current-password"
+        placeholder="Password"
+        class="bg-dark text-light text-sm px-4 py-3 rounded-lg outline-none border border-light/10 focus:border-light/30"
+        required
+      />
+      <button type="submit" class="bg-light text-dark text-sm font-semibold tracking-wide uppercase py-3 rounded-lg hover:bg-light/90">
+        Sign in
+      </button>
+    </form>
+  </div>
+
+  <script is:inline>
+    document.querySelector('[data-ajax-form]')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.currentTarget;
+      const fd = new FormData(form);
+      const res = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: fd.get('password') }),
+      });
+      if (res.ok) location.href = '/admin';
+      else window.AdminUI.showToast('Wrong password', 'error');
+    });
+  </script>
+</AdminLayout>

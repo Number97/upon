@@ -1,0 +1,186 @@
+---
+import '../styles/global.css';
+import { getTheme } from '../lib/queries';
+import { themeToCssVars } from '../lib/theme';
+
+interface Props {
+  title?: string;
+  showNav?: boolean;
+}
+const { title = 'Admin', showNav = true } = Astro.props;
+
+const theme = await getTheme();
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style id="theme-vars" set:html={themeToCssVars(theme)}></style>
+    <title>{title} · Uponground Admin</title>
+    <style>
+      .toast { animation: slide-in .15s ease-out; }
+      @keyframes slide-in { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      [data-locked] { pointer-events: none; opacity: .55; transition: opacity .15s; }
+      .pill-dirty { background: #b45309; color: white; }
+      .pill-saving { background: #1d4ed8; color: white; }
+    </style>
+  </head>
+  <body class="bg-blue text-light font-sans min-h-screen antialiased">
+    <header class="border-b border-light/10">
+      <div class="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+        <a href="/admin" class="flex items-center gap-3 hover:opacity-80">
+          <img src="/logo.svg" alt="" class="w-7 h-7" />
+          <span class="text-sm font-semibold tracking-wider uppercase">Uponground · Admin</span>
+        </a>
+        <div class="flex items-center gap-3">
+          <span data-dirty-pill class="text-[10px] font-semibold tracking-widest uppercase px-2 py-1 rounded hidden"></span>
+          {showNav && (
+            <form method="POST" action="/api/admin/logout" class="contents">
+              <button type="submit" class="text-xs text-gray hover:text-light tracking-wider uppercase">Logout</button>
+            </form>
+          )}
+        </div>
+      </div>
+      {showNav && (
+        <nav class="max-w-3xl mx-auto px-6 pb-3 flex flex-wrap gap-4 text-xs tracking-widest uppercase">
+          <a href="/admin" class="text-gray hover:text-light">Categories</a>
+          <a href="/admin/socials" class="text-gray hover:text-light">Socials</a>
+          <a href="/admin/theme" class="text-gray hover:text-light">Theme</a>
+          <a href="/admin/settings" class="text-gray hover:text-light">Settings</a>
+        </nav>
+      )}
+    </header>
+
+    <main class="max-w-3xl mx-auto px-6 py-10">
+      <slot />
+    </main>
+
+    <div data-toast class="fixed top-4 right-4 z-50 hidden toast text-sm font-medium px-4 py-2 rounded shadow-lg"></div>
+
+    <script is:inline>
+      window.AdminUI = (() => {
+        const pill = document.querySelector('[data-dirty-pill]');
+        const toast = document.querySelector('[data-toast]');
+
+        function setPill(state, text) {
+          if (!pill) return;
+          pill.classList.remove('hidden', 'pill-dirty', 'pill-saving');
+          if (state === 'idle') { pill.classList.add('hidden'); return; }
+          if (state === 'dirty') pill.classList.add('pill-dirty');
+          if (state === 'saving') pill.classList.add('pill-saving');
+          pill.textContent = text;
+        }
+
+        function showToast(text, kind) {
+          if (!toast) return;
+          toast.textContent = text;
+          toast.style.background = kind === 'error' ? '#b91c1c' : '#15803d';
+          toast.style.color = '#fff';
+          toast.classList.remove('hidden');
+          clearTimeout(showToast._t);
+          showToast._t = setTimeout(() => toast.classList.add('hidden'), 2500);
+        }
+
+        function watchForm(form) {
+          if (!form || form._watched) return;
+          form._watched = true;
+          const initial = serialize(form);
+          let dirty = false;
+          form.addEventListener('input', () => {
+            const now = serialize(form);
+            const isDirty = now !== initial;
+            if (isDirty !== dirty) {
+              dirty = isDirty;
+              setPill(dirty ? 'dirty' : 'idle', dirty ? 'Unsaved changes' : '');
+            }
+          });
+          window.addEventListener('beforeunload', (e) => {
+            if (dirty) { e.preventDefault(); e.returnValue = ''; }
+          });
+        }
+
+        function serialize(form) {
+          const fd = new FormData(form);
+          const out = [];
+          for (const [k, v] of fd.entries()) out.push(`${k}=${v}`);
+          return out.join('&');
+        }
+
+        async function submit(form, opts = {}) {
+          const root = opts.lockRoot || document.body;
+          root.setAttribute('data-locked', '');
+          setPill('saving', 'Saving…');
+          const fd = new FormData(form);
+          const body = Object.fromEntries(fd.entries());
+          // numeric / boolean coercion handled server-side
+          try {
+            const res = await fetch(form.action, {
+              method: form.method || 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({ error: 'Save failed' }));
+              throw new Error(err.error || 'Save failed');
+            }
+            showToast('Saved', 'ok');
+            if (opts.onSuccess) opts.onSuccess();
+            else setTimeout(() => location.reload(), 200);
+          } catch (e) {
+            root.removeAttribute('data-locked');
+            setPill('dirty', 'Unsaved changes');
+            showToast(e.message || 'Save failed', 'error');
+          }
+        }
+
+        async function action(url, body) {
+          document.body.setAttribute('data-locked', '');
+          setPill('saving', 'Working…');
+          try {
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(body || {}),
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({ error: 'Action failed' }));
+              throw new Error(err.error || 'Action failed');
+            }
+            showToast('Saved', 'ok');
+            setTimeout(() => location.reload(), 150);
+          } catch (e) {
+            document.body.removeAttribute('data-locked');
+            setPill('idle', '');
+            showToast(e.message || 'Action failed', 'error');
+          }
+        }
+
+        function init() {
+          document.querySelectorAll('[data-dirty-form]').forEach(watchForm);
+          document.querySelectorAll('[data-ajax-form]').forEach((form) => {
+            form.addEventListener('submit', (e) => {
+              e.preventDefault();
+              submit(form);
+            });
+          });
+          document.querySelectorAll('[data-confirm]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+              if (!confirm(btn.getAttribute('data-confirm'))) e.preventDefault();
+            });
+          });
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+        else init();
+
+        return { submit, action, showToast, setPill };
+      })();
+    </script>
+  </body>
+</html>

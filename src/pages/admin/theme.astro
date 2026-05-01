@@ -1,0 +1,58 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getTheme } from '../../lib/queries';
+import { DEFAULT_THEME } from '../../lib/theme';
+
+const theme = await getTheme();
+---
+
+<AdminLayout title="Theme">
+  <h1 class="text-lg font-semibold tracking-wide uppercase mb-6">Theme</h1>
+
+  <form data-dirty-form data-ajax-form method="POST" action="/api/admin/theme" class="flex flex-col gap-4 bg-dark rounded-lg p-5 mb-6">
+    <input type="hidden" name="action" value="update" />
+
+    {(['blue', 'dark', 'gray', 'light'] as const).map((key) => (
+      <div class="flex items-center gap-3">
+        <label class="text-xs text-gray tracking-widest uppercase w-16">{key}</label>
+        <input type="color" name={key} value={theme[key]} data-color-input={key}
+          class="w-12 h-10 rounded border border-light/10 bg-transparent" />
+        <input type="text" name={`${key}_hex`} value={theme[key]} pattern="^#[0-9a-fA-F]{6}$" data-hex-input={key}
+          class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30 font-mono w-32" />
+        <span class="text-xs text-gray">default {DEFAULT_THEME[key]}</span>
+      </div>
+    ))}
+
+    <div class="flex items-center gap-2 mt-2">
+      <button type="submit" class="bg-light text-dark text-xs font-semibold tracking-wider uppercase px-4 py-2 rounded hover:bg-light/90">Save</button>
+      <button type="button" data-reset-theme class="text-xs text-gray hover:text-light tracking-wider uppercase px-3 py-2">Reset to defaults</button>
+    </div>
+  </form>
+
+  <p class="text-xs text-gray mb-3">Live preview (current page reflects unsaved colors).</p>
+
+  <script is:inline define:vars={{ DEFAULT_THEME }}>
+    const root = document.documentElement;
+    document.querySelectorAll('[data-color-input]').forEach((picker) => {
+      const key = picker.getAttribute('data-color-input');
+      const hex = document.querySelector(`[data-hex-input="${key}"]`);
+      picker.addEventListener('input', () => {
+        hex.value = picker.value;
+        root.style.setProperty(`--color-${key}`, picker.value);
+        hex.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      hex.addEventListener('input', () => {
+        if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) {
+          picker.value = hex.value;
+          root.style.setProperty(`--color-${key}`, hex.value);
+        }
+      });
+    });
+
+    document.querySelector('[data-reset-theme]')?.addEventListener('click', () => {
+      if (!confirm('Reset all colors to defaults?')) return;
+      window.AdminUI.action('/api/admin/theme', { action: 'reset' });
+    });
+  </script>
+</AdminLayout>

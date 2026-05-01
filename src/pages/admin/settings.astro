@@ -1,0 +1,25 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getSettings } from '../../lib/queries';
+
+const settings = await getSettings();
+---
+
+<AdminLayout title="Settings">
+  <h1 class="text-lg font-semibold tracking-wide uppercase mb-6">Settings</h1>
+
+  <form data-dirty-form data-ajax-form method="POST" action="/api/admin/settings" class="flex flex-col gap-4 bg-dark rounded-lg p-5">
+    <div class="flex flex-col gap-1">
+      <label class="text-xs text-gray tracking-widest uppercase">Email</label>
+      <input name="email" type="email" value={settings.email} required
+        class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-xs text-gray tracking-widest uppercase">Tagline</label>
+      <input name="tagline" value={settings.tagline} required
+        class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+    </div>
+    <button type="submit" class="self-start bg-light text-dark text-xs font-semibold tracking-wider uppercase px-4 py-2 rounded hover:bg-light/90">Save</button>
+  </form>
+</AdminLayout>

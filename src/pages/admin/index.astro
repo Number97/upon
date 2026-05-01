@@ -1,0 +1,53 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getCategories, getLinks } from '../../lib/queries';
+
+const [categories, links] = await Promise.all([getCategories(), getLinks()]);
+const counts: Record<string, number> = {};
+for (const l of links) counts[l.category_id] = (counts[l.category_id] || 0) + 1;
+---
+
+<AdminLayout title="Categories">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-lg font-semibold tracking-wide uppercase">Categories</h1>
+  </div>
+
+  <ul class="flex flex-col gap-2 mb-8">
+    {categories.map((c, i) => (
+      <li class="flex items-center gap-2 bg-dark rounded-lg px-4 py-3">
+        <a href={`/admin/categories/${c.id}`} class="flex-1 flex items-center gap-3 hover:opacity-80">
+          <span class="text-xs text-gray font-mono">{c.slug}</span>
+          <span class="text-sm">{c.label}</span>
+          <span class="text-xs text-gray">· {counts[c.id] || 0} link{(counts[c.id] || 0) === 1 ? '' : 's'}</span>
+        </a>
+        <button class="text-xs text-gray hover:text-light disabled:opacity-30" disabled={i === 0} data-up={c.id} aria-label="Move up">▲</button>
+        <button class="text-xs text-gray hover:text-light disabled:opacity-30" disabled={i === categories.length - 1} data-down={c.id} aria-label="Move down">▼</button>
+        <button class="text-xs text-red-400 hover:text-red-300" data-delete={c.id} data-label={c.label} data-confirm-cat aria-label="Delete">✕</button>
+      </li>
+    ))}
+  </ul>
+
+  <h2 class="text-sm font-semibold tracking-widest uppercase text-gray mb-3">Add category</h2>
+  <form data-ajax-form method="POST" action="/api/admin/categories" class="flex flex-col gap-2 bg-dark rounded-lg p-4">
+    <input type="hidden" name="action" value="create" />
+    <input name="label" placeholder="Label (e.g. Mixes)" required
+      class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+    <input name="slug" placeholder="slug (e.g. mixes — lowercase, hyphenated)" pattern="[a-z0-9-]+" required
+      class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+    <button type="submit" class="self-start bg-light text-dark text-xs font-semibold tracking-wider uppercase px-4 py-2 rounded hover:bg-light/90">Add</button>
+  </form>
+
+  <script is:inline>
+    document.querySelectorAll('[data-up]').forEach((b) => b.addEventListener('click', () =>
+      window.AdminUI.action('/api/admin/categories', { action: 'move', id: b.getAttribute('data-up'), dir: 'up' })));
+    document.querySelectorAll('[data-down]').forEach((b) => b.addEventListener('click', () =>
+      window.AdminUI.action('/api/admin/categories', { action: 'move', id: b.getAttribute('data-down'), dir: 'down' })));
+    document.querySelectorAll('[data-delete]').forEach((b) => b.addEventListener('click', () => {
+      const id = b.getAttribute('data-delete');
+      const label = b.getAttribute('data-label');
+      if (!confirm(`Delete category "${label}" and all its links? This cannot be undone.`)) return;
+      window.AdminUI.action('/api/admin/categories', { action: 'delete', id });
+    }));
+  </script>
+</AdminLayout>

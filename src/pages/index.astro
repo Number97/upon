@@ -1,26 +1,13 @@
 ---
-import '../styles/global.css'
+export const prerender = true;
 
-const socials = [
-  { name: 'Instagram', url: 'https://instagram.com/uponground', icon: 'instagram' },
-  { name: 'YouTube', url: 'https://www.youtube.com/@uponhub/', icon: 'youtube' },
-  { name: 'SoundCloud', url: 'https://soundcloud.com/uponground', icon: 'soundcloud' },
-  { name: 'Bandcamp', url: 'https://uponground.bandcamp.com/', icon: 'bandcamp' },
-  { name: 'Telegram', url: 'https://t.me/uponhub', icon: 'telegram' },
-]
+import '../styles/global.css';
+import { getPublicData } from '../lib/queries';
+import { themeToCssVars } from '../lib/theme';
 
-const releases = [
-  { title: 'Seamless Blend [UPG-SB001]', url: 'https://on.soundcloud.com/kBPnDGJZzIj4mLwkDM' },
-  { title: 'PAKZ - Channel 2', url: 'https://www.youtube.com/watch?v=pbrWMw7OA0o' },
-  { title: 'Nichel - Romanian Dream [UPG002]', url: 'https://www.youtube.com/watch?v=LBL9Ad7jOu8' },
-  { title: 'Raffers - Dialog [UPG001]', url: 'https://www.youtube.com/watch?v=hRxR9aYpAmY' },
-]
-
-const podcasts = [
-  { title: "Geolyna Georgia - Celebrating Women's Day [UPC001]", url: 'https://on.soundcloud.com/j4hArARmAQDToJvn8O' },
-]
-
-const email = 'upongroundhub@gmail.com'
+const data = await getPublicData();
+const { categories, socials, theme, settings } = data;
+const initialJson = JSON.stringify(data);
 ---
 
 <html lang="en">
@@ -32,24 +19,22 @@ const email = 'upongroundhub@gmail.com'
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style id="theme-vars" set:html={themeToCssVars(theme)}></style>
     <title>Uponground</title>
   </head>
   <body class="bg-blue text-light font-sans min-h-screen flex items-center justify-center antialiased selection:bg-dark selection:text-light">
     <main class="w-full max-w-md mx-auto px-6 py-20 flex flex-col items-center gap-12">
 
-      <!-- Logo -->
       <div class="w-24 h-24">
         <img src="/logo.svg" alt="Uponground" class="w-full h-full" />
       </div>
 
-      <!-- Name & Bio -->
       <div class="text-center space-y-3">
         <h1 class="text-3xl font-semibold tracking-wide uppercase">Uponground</h1>
-        <p class="text-gray text-sm font-light tracking-[0.2em] uppercase">Electronic Music Platform</p>
+        <p data-tagline class="text-gray text-sm font-light tracking-[0.2em] uppercase">{settings.tagline}</p>
       </div>
 
-      <!-- Social Icons -->
-      <nav class="flex items-center gap-6" aria-label="Social links">
+      <nav data-socials class="flex items-center gap-6" aria-label="Social links">
         {socials.map(({ name, url, icon }) => (
           <a
             href={url}
@@ -64,8 +49,9 @@ const email = 'upongroundhub@gmail.com'
           </a>
         ))}
         <a
-          href={`mailto:${email}`}
+          href={`mailto:${settings.email}`}
           aria-label="Email"
+          data-email
           class="text-light/50 hover:text-light transition-colors duration-200"
         >
           <svg class="w-[18px] h-[18px] fill-current" role="img" aria-hidden="true">
@@ -74,45 +60,94 @@ const email = 'upongroundhub@gmail.com'
         </a>
       </nav>
 
-      <!-- Divider -->
-      <div class="w-8 h-px bg-gray/20"></div>
-
-      <!-- Releases -->
-      <div class="w-full flex flex-col gap-3">
-        <p class="text-xs text-gray font-medium tracking-widest uppercase text-center mb-2">Releases</p>
-        {releases.map(({ title, url }) => (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="block w-full text-center py-4 px-5 bg-dark rounded-lg text-sm font-normal tracking-wide text-light hover:bg-dark/80 transition-all duration-200"
-          >
-            {title}
-          </a>
+      <div data-sections class="contents">
+        {categories.map((cat, i) => (
+          <>
+            {i === 0 && <div class="w-8 h-px bg-gray/20"></div>}
+            {i > 0 && <div class="w-8 h-px bg-gray/20"></div>}
+            <div class="w-full flex flex-col gap-3" data-category={cat.slug}>
+              <p class="text-xs text-gray font-medium tracking-widest uppercase text-center mb-2" data-category-label>{cat.label}</p>
+              <div class="flex flex-col gap-3" data-category-links>
+                {cat.links.map(({ title, url }) => (
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block w-full text-center py-4 px-5 bg-dark rounded-lg text-sm font-normal tracking-wide text-light hover:bg-dark/80 transition-all duration-200"
+                  >
+                    {title}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </>
         ))}
       </div>
 
-      <!-- Divider -->
-      <div class="w-8 h-px bg-gray/20"></div>
-
-      <!-- Podcasts -->
-      <div class="w-full flex flex-col gap-3">
-        <p class="text-xs text-gray font-medium tracking-widest uppercase text-center mb-2">Podcasts</p>
-        {podcasts.map(({ title, url }) => (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="block w-full text-center py-4 px-5 bg-dark rounded-lg text-sm font-normal tracking-wide text-light hover:bg-dark/80 transition-all duration-200"
-          >
-            {title}
-          </a>
-        ))}
-      </div>
-
-      <!-- Coming Soon -->
       <p class="text-xs text-gray/40 font-light tracking-[0.25em] uppercase mt-2">More Coming Soon</p>
 
     </main>
+
+    <script id="initial-data" type="application/json" is:inline set:html={initialJson}></script>
+    <script is:inline>
+      (async () => {
+        const initialEl = document.getElementById('initial-data');
+        if (!initialEl) return;
+        const initial = JSON.parse(initialEl.textContent || '{}');
+        let fresh;
+        try {
+          const res = await fetch('/api/data', { cache: 'no-store' });
+          if (!res.ok) return;
+          fresh = await res.json();
+        } catch { return; }
+        if (JSON.stringify(fresh) === JSON.stringify(initial)) return;
+        applyData(fresh);
+      })();
+
+      function applyData(data) {
+        // Theme
+        const root = document.documentElement;
+        root.style.setProperty('--color-blue', data.theme.blue);
+        root.style.setProperty('--color-dark', data.theme.dark);
+        root.style.setProperty('--color-gray', data.theme.gray);
+        root.style.setProperty('--color-light', data.theme.light);
+
+        // Tagline + email
+        const tagline = document.querySelector('[data-tagline]');
+        if (tagline) tagline.textContent = data.settings.tagline;
+        const emailLink = document.querySelector('[data-email]');
+        if (emailLink) emailLink.setAttribute('href', `mailto:${data.settings.email}`);
+
+        // Socials
+        const socialsNav = document.querySelector('[data-socials]');
+        if (socialsNav) {
+          const emailHtml = socialsNav.querySelector('[data-email]')?.outerHTML || '';
+          socialsNav.innerHTML = data.socials.map((s) => `
+            <a href="${escapeAttr(s.url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttr(s.name)}" class="text-light/50 hover:text-light transition-colors duration-200">
+              <svg class="w-[18px] h-[18px] fill-current" role="img" aria-hidden="true"><use href="/icons.svg#${escapeAttr(s.icon)}"></use></svg>
+            </a>
+          `).join('') + emailHtml;
+        }
+
+        // Categories
+        const sections = document.querySelector('[data-sections]');
+        if (sections) {
+          sections.innerHTML = data.categories.map((cat) => `
+            <div class="w-8 h-px bg-gray/20"></div>
+            <div class="w-full flex flex-col gap-3" data-category="${escapeAttr(cat.slug)}">
+              <p class="text-xs text-gray font-medium tracking-widest uppercase text-center mb-2">${escapeText(cat.label)}</p>
+              <div class="flex flex-col gap-3">
+                ${cat.links.map((l) => `
+                  <a href="${escapeAttr(l.url)}" target="_blank" rel="noopener noreferrer" class="block w-full text-center py-4 px-5 bg-dark rounded-lg text-sm font-normal tracking-wide text-light hover:bg-dark/80 transition-all duration-200">${escapeText(l.title)}</a>
+                `).join('')}
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      function escapeAttr(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+      function escapeText(s) { return String(s).replace(/[&<>]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c])); }
+    </script>
   </body>
 </html>

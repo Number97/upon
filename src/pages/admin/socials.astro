@@ -1,0 +1,64 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getSocials } from '../../lib/queries';
+
+const socials = await getSocials();
+const ICONS = ['instagram', 'youtube', 'soundcloud', 'bandcamp', 'telegram', 'email'];
+---
+
+<AdminLayout title="Socials">
+  <h1 class="text-lg font-semibold tracking-wide uppercase mb-6">Socials</h1>
+
+  <ul class="flex flex-col gap-2 mb-8">
+    {socials.map((s, i) => (
+      <li class="bg-dark rounded-lg p-3">
+        <form data-dirty-form data-ajax-form method="POST" action="/api/admin/socials" class="flex flex-col gap-2">
+          <input type="hidden" name="action" value="update" />
+          <input type="hidden" name="id" value={s.id} />
+          <input name="name" value={s.name} required
+            class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+          <input name="url" type="url" value={s.url} required
+            class="bg-blue text-light text-xs px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30 font-mono" />
+          <select name="icon" class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30">
+            {ICONS.map(ic => <option value={ic} selected={ic === s.icon}>{ic}</option>)}
+          </select>
+          <div class="flex items-center gap-2">
+            <button type="submit" class="bg-light text-dark text-xs font-semibold tracking-wider uppercase px-3 py-1.5 rounded hover:bg-light/90">Save</button>
+            <button type="button" class="text-xs text-gray hover:text-light disabled:opacity-30" disabled={i === 0} data-social-up={s.id}>▲</button>
+            <button type="button" class="text-xs text-gray hover:text-light disabled:opacity-30" disabled={i === socials.length - 1} data-social-down={s.id}>▼</button>
+            <button type="button" class="ml-auto text-xs text-red-400 hover:text-red-300" data-social-delete={s.id} data-social-name={s.name}>✕</button>
+          </div>
+        </form>
+      </li>
+    ))}
+  </ul>
+
+  <h2 class="text-sm font-semibold tracking-widest uppercase text-gray mb-3">Add social</h2>
+  <form data-ajax-form method="POST" action="/api/admin/socials" class="flex flex-col gap-2 bg-dark rounded-lg p-4">
+    <input type="hidden" name="action" value="create" />
+    <input name="name" placeholder="Name" required
+      class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30" />
+    <input name="url" type="url" placeholder="https://…" required
+      class="bg-blue text-light text-xs px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30 font-mono" />
+    <select name="icon" class="bg-blue text-light text-sm px-3 py-2 rounded outline-none border border-light/10 focus:border-light/30">
+      {ICONS.map(ic => <option value={ic}>{ic}</option>)}
+    </select>
+    <button type="submit" class="self-start bg-light text-dark text-xs font-semibold tracking-wider uppercase px-4 py-2 rounded hover:bg-light/90">Add</button>
+  </form>
+
+  <p class="text-xs text-gray mt-4">Icon list comes from <code class="font-mono">public/icons.svg</code>. To add a new icon, add an SVG <code class="font-mono">&lt;symbol id="..."&gt;</code> there and the slug becomes available.</p>
+
+  <script is:inline>
+    document.querySelectorAll('[data-social-up]').forEach((b) => b.addEventListener('click', () =>
+      window.AdminUI.action('/api/admin/socials', { action: 'move', id: b.getAttribute('data-social-up'), dir: 'up' })));
+    document.querySelectorAll('[data-social-down]').forEach((b) => b.addEventListener('click', () =>
+      window.AdminUI.action('/api/admin/socials', { action: 'move', id: b.getAttribute('data-social-down'), dir: 'down' })));
+    document.querySelectorAll('[data-social-delete]').forEach((b) => b.addEventListener('click', () => {
+      const id = b.getAttribute('data-social-delete');
+      const name = b.getAttribute('data-social-name');
+      if (!confirm(`Delete social "${name}"?`)) return;
+      window.AdminUI.action('/api/admin/socials', { action: 'delete', id });
+    }));
+  </script>
+</AdminLayout>
