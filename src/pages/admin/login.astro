@@ -11,7 +11,7 @@ if (verifySessionCookie(Astro.cookies.get(SESSION_COOKIE)?.value)) {
 <AdminLayout title="Login" showNav={false}>
   <div class="max-w-sm mx-auto mt-16 flex flex-col gap-6">
     <h1 class="text-xl font-semibold tracking-wide uppercase text-center">Admin</h1>
-    <form data-ajax-form method="POST" action="/api/admin/login" class="flex flex-col gap-3">
+    <form data-login-form method="POST" action="/api/admin/login" class="flex flex-col gap-3">
       <input
         type="password"
         name="password"
@@ -27,17 +27,23 @@ if (verifySessionCookie(Astro.cookies.get(SESSION_COOKIE)?.value)) {
   </div>
 
   <script is:inline>
-    document.querySelector('[data-ajax-form]')?.addEventListener('submit', async (e) => {
+    document.querySelector('[data-login-form]')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.currentTarget;
-      const fd = new FormData(form);
-      const res = await fetch(form.action, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ password: fd.get('password') }),
-      });
-      if (res.ok) location.href = '/admin';
-      else window.AdminUI.showToast('Wrong password', 'error');
+      const password = form.elements.namedItem('password')?.value || '';
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch(form.getAttribute('action'), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        if (res.ok) location.href = '/admin';
+        else window.AdminUI.showToast('Wrong password', 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     });
   </script>
 </AdminLayout>

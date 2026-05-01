@@ -3,7 +3,7 @@ import { SESSION_COOKIE, SESSION_MAX_AGE_S, checkPassword, makeSessionCookie } f
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, cookies, url }) => {
   let body: any = {};
   try { body = await request.json(); } catch {}
   const password = String(body?.password || '');
@@ -15,7 +15,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
   cookies.set(SESSION_COOKIE, makeSessionCookie(), {
     httpOnly: true,
-    secure: true,
+    secure: url.protocol === 'https:',
     sameSite: 'lax',
     path: '/',
     maxAge: SESSION_MAX_AGE_S,

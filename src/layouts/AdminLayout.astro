@@ -87,22 +87,33 @@ const theme = await getTheme();
           showToast._t = setTimeout(() => toast.classList.add('hidden'), 2500);
         }
 
+        const dirtyForms = new Set();
+        let skipUnloadGuard = false;
+
+        function refreshPill() {
+          const anyDirty = dirtyForms.size > 0;
+          setPill(anyDirty ? 'dirty' : 'idle', anyDirty ? 'Unsaved changes' : '');
+        }
+
         function watchForm(form) {
           if (!form || form._watched) return;
           form._watched = true;
           const initial = serialize(form);
-          let dirty = false;
           form.addEventListener('input', () => {
-            const now = serialize(form);
-            const isDirty = now !== initial;
-            if (isDirty !== dirty) {
-              dirty = isDirty;
-              setPill(dirty ? 'dirty' : 'idle', dirty ? 'Unsaved changes' : '');
-            }
+            if (serialize(form) !== initial) dirtyForms.add(form);
+            else dirtyForms.delete(form);
+            refreshPill();
           });
-          window.addEventListener('beforeunload', (e) => {
-            if (dirty) { e.preventDefault(); e.returnValue = ''; }
-          });
+        }
+
+        window.addEventListener('beforeunload', (e) => {
+          if (skipUnloadGuard) return;
+          if (dirtyForms.size > 0) { e.preventDefault(); e.returnValue = ''; }
+        });
+
+        function reloadSoon(delayMs) {
+          skipUnloadGuard = true;
+          setTimeout(() => location.reload(), delayMs);
         }
 
         function formToObject(form) {
@@ -140,17 +151,21 @@ const theme = await getTheme();
               const err = await res.json().catch(() => ({ error: 'Save failed' }));
               throw new Error(err.error || 'Save failed');
             }
+            dirtyForms.delete(form);
+            refreshPill();
             showToast('Saved', 'ok');
             if (opts.onSuccess) opts.onSuccess();
-            else setTimeout(() => location.reload(), 200);
+            else reloadSoon(200);
           } catch (e) {
             root.removeAttribute('data-locked');
-            setPill('dirty', 'Unsaved changes');
+            refreshPill();
             showToast(e.message || 'Save failed', 'error');
           }
         }
 
         async function action(url, body) {
+          if (dirtyForms.size > 0 &&
+              !confirm('You have unsaved changes that will be lost. Continue?')) return;
           document.body.setAttribute('data-locked', '');
           setPill('saving', 'Working…');
           try {
@@ -164,10 +179,10 @@ const theme = await getTheme();
               throw new Error(err.error || 'Action failed');
             }
             showToast('Saved', 'ok');
-            setTimeout(() => location.reload(), 150);
+            reloadSoon(150);
           } catch (e) {
             document.body.removeAttribute('data-locked');
-            setPill('idle', '');
+            refreshPill();
             showToast(e.message || 'Action failed', 'error');
           }
         }

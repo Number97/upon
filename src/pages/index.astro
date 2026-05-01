@@ -7,7 +7,11 @@ import { themeToCssVars } from '../lib/theme';
 
 const data = await getPublicData();
 const { categories, socials, theme, settings } = data;
-const initialJson = JSON.stringify(data);
+// Escape sequences that could break out of the <script> tag.
+const initialJson = JSON.stringify(data)
+  .replace(/</g, '\\u003c')
+  .replace(/>/g, '\\u003e')
+  .replace(/&/g, '\\u0026');
 ---
 
 <html lang="en">

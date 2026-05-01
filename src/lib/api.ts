@@ -16,7 +16,10 @@ export async function readJson(request: Request): Promise<any> {
 }
 
 export function isUrl(value: string): boolean {
-  try { new URL(value); return true; } catch { return false; }
+  try {
+    const u = new URL(value);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch { return false; }
 }
 
 export function isSlug(value: string): boolean {
